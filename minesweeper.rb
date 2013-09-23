@@ -1,3 +1,5 @@
+require 'yaml'
+
 class Tile
 
   attr_reader :bomb, :revealed, :flagged
@@ -153,6 +155,7 @@ class Game
   def initialize(size = 9, num_bombs = 10)
     @board = Board.new(size, num_bombs)
     @player = Player.new
+    @moves = 0
   end
 
   def run
@@ -165,8 +168,10 @@ class Game
         @board.explore(position)
       elsif action == 'f'
         @board.flag(position)
+      else
+        next
       end
-
+      @moves += 1
       @board.display
     end
     game_results
@@ -181,8 +186,29 @@ class Game
   end
 
   def game_results
-    puts "You win" if @board.win?
+    if @board.win?
+      puts "You won in #{@moves} moves."
+      high_scores
+    end
     puts "You lose" if @board.lose?
+  end
+
+  def high_scores
+    # Load the highscoresi n YAML format.
+    if File.exist?("high_scores.yaml")
+      serialized_high_scores = File.read("high_scores.yaml")
+      @high_scores = YAML.load(serialized_high_scores)
+    else
+      @high_scores = HighScores.new
+    end
+
+    @high_scores.input_score(@moves)
+    @high_scores.display
+
+    # Save the highscores in YAML format.
+    File.open("high_scores.yaml", 'w') do |file|
+      file.write(@high_scores.to_yaml)
+    end
   end
 
 end
@@ -197,7 +223,28 @@ class Player
   end
 end
 
+class HighScores
+  def initialize
+    @scores = [['AAA', 40]] * 10
+  end
+
+  def display
+    puts "High scores:"
+    @scores.each { |initials, score| puts "#{initials} : #{score}" }
+  end
+
+  def input_score(score)
+    _,worst_top_score = @scores.last
+    return if worst_top_score < score
+    @scores.pop
+    puts "You have a new high score! Enter your initials below: "
+    initials = gets.chomp.upcase
+    @scores << [initials, score]
+    @scores.sort_by! { |initials, score| score }
+  end
+end
+
 if __FILE__ == $0
-  game = Game.new
+  game = Game.new(5,1)
   game.run
 end
