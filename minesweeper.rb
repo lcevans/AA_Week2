@@ -19,9 +19,20 @@ class Tile
   end
 
   def neighbors
+    #return array of Tiles
+    neighbors = []
+    [-1,0,1].each do |dx|
+      [-1,0,1].each do |dy|
+        next if [dx,dy] == [0,0]
+        x,y = @location
+        neighbors << @board.tiles[x+dx][y+dy] if (x+dx).between?(0,@board.size-1) && (y+dy).between?(0,@board.size-1)
+      end
+    end
+    neighbors
   end
 
   def value
+    neighbors.select{|tile| tile.bomb?}.count
   end
 
   def bomb?
@@ -38,6 +49,12 @@ class Tile
 
   def reveal
     @revealed = true
+
+    if value == 0 and !bomb?
+      neighbors.each do |neighbor|
+        neighbor.reveal unless neighbor.revealed?
+      end
+    end
   end
 
 end
@@ -46,9 +63,9 @@ end
 
 class Board
 
-  attr_accessor :tiles
+  attr_accessor :tiles, :size
 
-  def initialize(size = 9, num_bombs = 9)
+  def initialize(size, num_bombs)
     @size = size
     @tiles = []
     @num_bombs = num_bombs
@@ -78,6 +95,7 @@ class Board
   end
 
   def display
+    puts "#{@num_bombs} bombs. #{flags_placed} flags placed."
     legend = (0..@size - 1).to_a.join
     puts "x\\y #{legend}"
     @size.times do |x|
@@ -100,14 +118,16 @@ class Board
   def explore(pos)
     x,y = pos
     @tiles[x][y].reveal
-    # find neighbords
-    # - check if they're bombs or revealed
 
   end
 
   def flag(pos)
     x,y = pos
     @tiles[x][y].set_flag
+  end
+
+  def flags_placed
+    @tiles.flatten.select { |tile| tile.flagged? }.count
   end
 
   def win?
@@ -127,28 +147,45 @@ end
 
 class Game
 
-  def initialize
-    @board = Board.new
+  def initialize(size = 9, num_bombs = 10)
+    @board = Board.new(size, num_bombs)
+    @player = Player.new
   end
 
   def run
-    # @board.display
-    # until game.finished?
-    #   prompt for input (will be location)- will either flag or explore
-    #   board.update
-    # end
-    #
-    #  game results
+    @board.display
+    welcome
+    until finished?
+
+      action, position = @player.get_position
+      if action == 'e'
+        @board.explore(position)
+      elsif action == 'f'
+        @board.flag(position)
+      end
+
+      @board.display
+    end
+    game_results
+  end
+
+  def welcome
+    puts "Welcome to Minesweeper. Explore tiles at your own risk."
   end
 
   def finished?
     @board.win? || @board.lose?
   end
 
+  def game_results
+    puts "You win" if @board.win?
+    puts "You lose" if @board.lose?
+  end
+
 end
 
 class Player
-  def give_location  # "r 1,2" or "f 4,5". Returns [action,position]
+  def get_position  # "r 1,2" or "f 4,5". Returns [action,position]
     puts "Flag or explore a location. (e.g. type 'e 1,2' to explore (1,2) or 'f 1,2' to flag it)"
     input = gets.chomp
     action, position = input.split(" ")
