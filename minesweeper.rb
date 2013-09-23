@@ -25,7 +25,9 @@ class Tile
       [-1,0,1].each do |dy|
         next if [dx,dy] == [0,0]
         x,y = @location
-        neighbors << @board.tiles[x+dx][y+dy] if (x+dx).between?(0,@board.size-1) && (y+dy).between?(0,@board.size-1)
+        if (x+dx).between?(0,@board.size-1) && (y+dy).between?(0,@board.size-1)
+          neighbors << @board.tiles[x+dx][y+dy]
+        end
       end
     end
     neighbors
@@ -66,6 +68,7 @@ class Board
   attr_accessor :tiles, :size
 
   def initialize(size, num_bombs)
+
     @size = size
     @tiles = []
     @num_bombs = num_bombs
@@ -192,4 +195,9 @@ class Player
     position = position.split(",").map(&:to_i)
     [action,position]
   end
+end
+
+if __FILE__ == $0
+  game = Game.new
+  game.run
 end
