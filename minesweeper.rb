@@ -168,6 +168,12 @@ class Game
         @board.explore(position)
       elsif action == 'f'
         @board.flag(position)
+      elsif action == 'save'
+        save
+      elsif action == 'load'
+        load
+      elsif action == 'quit'
+        abort
       else
         next
       end
@@ -211,6 +217,18 @@ class Game
     end
   end
 
+  def save
+    Dir.mkdir("saves")
+    File.open("./saves/saved_game.yaml", "w") do |file|
+      file.write(@board.to_yaml)
+    end
+  end
+
+  def load
+    serialized_board = File.read("./saves/saved_game.yaml")
+    @board = YAML.load(serialized_board)
+  end
+
 end
 
 class Player
@@ -218,7 +236,7 @@ class Player
     puts "Flag or explore a location. (e.g. type 'e 1,2' to explore (1,2) or 'f 1,2' to flag it)"
     input = gets.chomp
     action, position = input.split(" ")
-    position = position.split(",").map(&:to_i)
+    position = position.split(",").map(&:to_i) unless position.nil?
     [action,position]
   end
 end
@@ -245,6 +263,6 @@ class HighScores
 end
 
 if __FILE__ == $0
-  game = Game.new(5,1)
+  game = Game.new(5,4)
   game.run
 end
