@@ -144,11 +144,7 @@ class Board
     @tiles.flatten.any? { |tile| tile.revealed? && tile.bomb? }
     #check if any bomb is visible
   end
-
 end
-
-
-
 
 class Game
 
@@ -164,23 +160,25 @@ class Game
     until finished?
 
       action, position = @player.get_position
-      if action == 'e'
-        @board.explore(position)
-      elsif action == 'f'
-        @board.flag(position)
-      elsif action == 'save'
-        save
-      elsif action == 'load'
-        load
-      elsif action == 'quit'
-        abort
-      else
-        next
-      end
+      parse_input(action, position)
       @moves += 1
       @board.display
     end
     game_results
+  end
+
+  def parse_input(action, position)
+    if action == 'e'
+      @board.explore(position)
+    elsif action == 'f'
+      @board.flag(position)
+    elsif action == 'save'
+      save
+    elsif action == 'load'
+      load
+    elsif action == 'quit'
+      abort
+    end
   end
 
   def welcome
