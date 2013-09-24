@@ -67,13 +67,14 @@ end
 
 class Board
 
-  attr_accessor :tiles, :size
+  attr_accessor :tiles, :size, :time_elapsed
 
   def initialize(size, num_bombs)
 
     @size = size
     @tiles = []
     @num_bombs = num_bombs
+    @time_elapsed = 0
 
     generate_empty_board
     place_bombs
@@ -151,17 +152,18 @@ class Game
   def initialize(size = 9, num_bombs = 10)
     @board = Board.new(size, num_bombs)
     @player = Player.new
-    @moves = 0
+    @time_stamp
   end
 
   def run
     @board.display
     welcome
+    @board.time_elapsed = 0
     until finished?
-
+      time_stamp = Time.now
       action, position = @player.get_position
+      @board.time_elapsed += Time.now - time_stamp
       parse_input(action, position)
-      @moves += 1
       @board.display
     end
     game_results
@@ -191,7 +193,7 @@ class Game
 
   def game_results
     if @board.win?
-      puts "You won in #{@moves} moves."
+      puts "You won in #{@board.time_elapsed.to_i} seconds."
       high_scores
     end
     puts "You lose" if @board.lose?
@@ -206,7 +208,7 @@ class Game
       @high_scores = HighScores.new
     end
 
-    @high_scores.input_score(@moves)
+    @high_scores.input_score(@board.time_elapsed.to_i)
     @high_scores.display
 
     # Save the highscores in YAML format.
@@ -216,7 +218,7 @@ class Game
   end
 
   def save
-    Dir.mkdir("saves")
+    Dir.mkdir("saves") unless File.directory?("saves")
     File.open("./saves/saved_game.yaml", "w") do |file|
       file.write(@board.to_yaml)
     end
@@ -241,12 +243,12 @@ end
 
 class HighScores
   def initialize
-    @scores = [['AAA', 40]] * 10
+    @scores = [['AAA', 100]] * 10
   end
 
   def display
     puts "High scores:"
-    @scores.each { |initials, score| puts "#{initials} : #{score}" }
+    @scores.each { |initials, score| puts "#{initials} : #{score} seconds" }
   end
 
   def input_score(score)
@@ -261,6 +263,6 @@ class HighScores
 end
 
 if __FILE__ == $0
-  game = Game.new(5,4)
+  game = Game.new(5,1)
   game.run
 end
